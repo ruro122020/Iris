@@ -7,29 +7,20 @@ Format: the concept, the mental model, the check questions, and the answers wort
 
 ### The concept
 
-Rust has no exceptions. A function that can fail returns `Result<T, E>`: an **enum** (a type that
-is exactly one of several listed variants) with two variants, `Ok(T)` carrying the success value,
-or `Err(E)` carrying the error.
-
-Failure is part of the function's **type signature**, checked by the compiler. You cannot forget
-to handle it the way you can forget a `try`/`catch`, because the success value is locked inside the
-`Ok` wrapper, and the only way to reach it is to deal with both variants.
+> **🔑 Core Concept: `Result`, errors as ordinary values**
+>
+> Rust has no exceptions. A function that can fail returns `Result<T, E>`: an **enum** (a type that is exactly one of several listed variants) with two variants, `Ok(T)` carrying the success value, or `Err(E)` carrying the error.
+>
+> Failure is part of the function's *type signature*, checked by the compiler. You cannot forget to handle it the way you can forget a `try`/`catch`, because the success value is locked inside the `Ok` wrapper, and the only way to reach it is to deal with both variants.
+>
+> Our `main` returns `Result<(), std::io::Error>`. The `()` is the **unit type**, Rust's "nothing meaningful here" value, similar to `void`. So the signature reads as "either succeeds with nothing to report, or fails with an I/O error." When `main` returns a `Result`, the process exit code becomes 0 on `Ok` and nonzero on `Err` (with the error printed), which is exactly the contract shell tools and systemd expect.
+>
+> That's why the last line is `Ok(())`: "reached the end, succeeded, nothing to hand back." No semicolon and no `return`, because in Rust the final expression of a block *is* the block's value.
 
 The shift from Python/JS: in Python, `open("x.txt")` has a signature that says nothing about
 failure; you discover it can throw an error only from docs or from being burned at runtime. In Rust,
 `Result<File, io::Error>` says "this can fail" at **compile time, in the signature itself**. Errors
 move from a runtime surprise to a compile-time fact.
-
-### `main`'s return type
-
-`main` returns `Result<(), std::io::Error>`:
-
-- `()` is the **unit type**, Rust's "nothing meaningful here" value, similar to `void`.
-- So it reads as "either succeeds with nothing to report, or fails with an I/O error."
-- When `main` returns a `Result`, the process exit code is 0 on `Ok`, nonzero on `Err` (with the
-  error printed). That is exactly the contract shell tools and systemd expect.
-- The last line is `Ok(())`: "reached the end, succeeded, nothing to hand back." No semicolon and
-  no `return`, because in Rust the final expression of a block *is* the block's value.
 
 ### The forced question, and the four tools that answer it
 

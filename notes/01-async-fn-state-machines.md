@@ -8,9 +8,9 @@ Format: the concept, the mental model, the check questions, and the answers wort
 
 ### The concept
 
-Calling a normal `fn` runs its body immediately. Calling an `async fn` runs **nothing**: it
-instantly returns a **future**, a paused state-machine value describing work that *can* be done.
-The body only executes when something `.await`s it (or the runtime polls it).
+> **🔑 Core Concept: `async fn` returns a state machine, not a value**
+>
+> Calling a normal `fn` runs its body immediately. Calling an `async fn` runs *nothing*: it instantly returns a **future**, a paused state-machine object describing work that *can* be done. The body only executes when something `.await`s it (or the runtime polls it). At compile time, Rust transforms the function body into an enum-like structure with one state per pause point. That's the whole trick, and it's why async needs no garbage collector or green-thread stacks: the "paused function" is just a plain struct sitting in memory. Our `health` has no pause points at all, so its state machine is trivial, but axum requires handlers to be async because *real* handlers will await things (like your serial port to the STM32 later).
 
 ```rust
 // You write:
