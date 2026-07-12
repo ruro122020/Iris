@@ -6,6 +6,28 @@ Format: the concept, the mental model, the check questions, and the answers wort
 
 **Introduced while writing:** `src/main.rs` handlers (`health`, `turn_on`, `turn_off`)
 
+### The code that introduced it
+
+Iris is a web API with three route handlers. Every one of them is declared `async`, even though not
+one of them awaits anything yet:
+
+```rust
+async fn health() -> &'static str {
+    "OK\n"
+}
+
+async fn turn_on() -> &'static str {
+    "led: on\n"
+}
+
+async fn turn_off() -> &'static str {
+    "led: off\n"
+}
+```
+
+The question that started this: if none of them wait for anything, why does axum insist they be
+`async` at all? Answering it means knowing what `async` actually produces.
+
 ### The concept
 
 > **🔑 Core Concept: `async fn` returns a state machine, not a value**
@@ -74,9 +96,9 @@ its `Start` state), obeying the exact same ownership rules as `let s = String::f
 world**, at `.await` the task saves its state into the enum and is **parked**, the **thread is
 released** and steps into another handler, and when the awaited thing completes the runtime
 resumes the enum from its saved state on *any* free worker thread, not necessarily the original
-one. Think of the restaurant analogy: a blocking waiter stares at the kitchen until your food is
-up, while an async waiter writes down the order (the enum state), serves six other tables, and
-returns when the bell rings.
+one. Picture a restaurant: a blocking waiter stares at the kitchen until your food is up, while an
+async waiter writes down the order (the enum state), serves six other tables, and returns when the
+bell rings.
 
 **The sentence to keep:** threads are only occupied by handlers that are **actively computing**,
 never by handlers that are **waiting**. Tasks wait; threads don't.
@@ -86,25 +108,28 @@ never by handlers that are **waiting**. Tasks wait; threads don't.
 1. **Call `turn_on()` but never `.await` it. Does "led: on" ever get produced?**
    No. The call only constructs the state machine in `Start`. No `.await`, no polling, no execution.
 
-2. **`let f = turn_on();` What is `f`, and who's responsible for its memory?**
-   An instance of the state-machine enum (not "a declared function": the parentheses mean the
-   function *was called* and returned this value). `f` owns it; scope rules free it. Same rules
-   as a `String`.
+2. **`let f = turn_on();` What is `f`, and who is responsible for its memory?**
+   An instance of the state-machine enum, sitting in its `Start` state. The parentheses in
+   `turn_on()` mean the function really *was called*, so `f` is a value the call returned, not a
+   name for the function itself. It is just that the returned value is a paused state machine rather
+   than `"led: on\n"`. `f` owns it, and scope rules free it. Same rules as a `String`.
 
-3. **In the `example()` fn with `a`, `b` before the `.await` and `msg` used after, which locals
-   get stored in the enum?**
-   Only `msg` (used across the pause). `a` and `b` finish before the pause: plain stack, never saved.
+3. **Which locals get stored in the enum here, and which do not?**
 
    ```rust
-    async fn example() {
-      let a = 1;
-      let b = a + 1;
-      println!("{b}");          // a and b used, then never again
-      let msg = "LED ON";
-      send(msg).await;          // pause point
-      println!("sent {msg}");   // msg used after the pause
-    }
+   async fn example() {
+       let a = 1;
+       let b = a + 1;
+       println!("{b}");          // a and b used, then never again
+       let msg = "LED ON";
+       send(msg).await;          // pause point
+       println!("sent {msg}");   // msg used after the pause
+   }
    ```
+
+   Only `msg`, because it is used *across* the pause and so has to survive it. `a` and `b` are
+   finished with before the pause is ever reached, so they live and die on the plain stack and never
+   enter the enum.
 
 4. **1000 simultaneous requests, each awaiting a 5 ms serial reply, 8 worker threads. How many
    tasks can be "waiting on serial" at once, and what does each consume?**

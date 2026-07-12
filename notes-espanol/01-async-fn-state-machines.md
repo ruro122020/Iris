@@ -6,6 +6,28 @@ Formato: el concepto, el modelo mental, las preguntas de comprobación y las res
 
 **Introducido mientras escribíamos:** los handlers de `src/main.rs` (`health`, `turn_on`, `turn_off`)
 
+### El código que lo introdujo
+
+Iris es una API web con tres handlers de ruta. Todos ellos están declarados `async`, aunque ninguno
+espera nada todavía:
+
+```rust
+async fn health() -> &'static str {
+    "OK\n"
+}
+
+async fn turn_on() -> &'static str {
+    "led: on\n"
+}
+
+async fn turn_off() -> &'static str {
+    "led: off\n"
+}
+```
+
+La pregunta que dio origen a todo esto: si ninguno espera nada, ¿por qué insiste axum en que sean
+`async`? Responderla exige saber qué produce realmente `async`.
+
 ### El concepto
 
 > **🔑 Concepto Fundamental: `async fn` devuelve una máquina de estados, no un valor**
@@ -77,9 +99,9 @@ parado dentro del handler sin hacer nada durante 5 ms; «en progreso» equivale 
 y todos los demás hacen cola. En el **mundo async**, en el `.await` la tarea guarda su estado en el
 enum y queda **aparcada**, el **hilo queda liberado** y pasa a otro handler, y cuando lo que se
 esperaba se completa, el runtime reanuda el enum desde su estado guardado en *cualquier* hilo de
-trabajo libre, no necesariamente el original. Piensa en la analogía del restaurante: un camarero
-bloqueante se queda mirando la cocina hasta que tu comida está lista, mientras que un camarero async
-apunta el pedido (el estado del enum), atiende otras seis mesas y vuelve cuando suena la campana.
+trabajo libre, no necesariamente el original. Imagina un restaurante: un camarero bloqueante se queda
+mirando la cocina hasta que tu comida está lista, mientras que un camarero async apunta el pedido (el
+estado del enum), atiende otras seis mesas y vuelve cuando suena la campana.
 
 **La frase que hay que retener:** los hilos solo están ocupados por handlers que están **computando
 activamente**, nunca por handlers que están **esperando**. Las tareas esperan; los hilos no.
@@ -90,24 +112,28 @@ activamente**, nunca por handlers que están **esperando**. Las tareas esperan; 
    No. La llamada solo construye la máquina de estados en `Start`. Sin `.await`, no hay polling ni ejecución.
 
 2. **`let f = turn_on();` ¿Qué es `f`, y quién es responsable de su memoria?**
-   Una instancia del enum de la máquina de estados (no «una función declarada»: los paréntesis
-   significan que la función *fue llamada* y devolvió este valor). `f` lo posee; las reglas de ámbito
-   lo liberan. Las mismas reglas que para un `String`.
+   Una instancia del enum de la máquina de estados, en su estado `Start`. Los paréntesis de
+   `turn_on()` significan que la función sí *fue llamada*, así que `f` es un valor que la llamada
+   devolvió, no un nombre para la función en sí. Lo que pasa es que el valor devuelto es una máquina
+   de estados en pausa, y no `"led: on\n"`. `f` lo posee, y las reglas de ámbito lo liberan. Las
+   mismas reglas que para un `String`.
 
-3. **En la fn `example()` con `a` y `b` antes del `.await` y `msg` usado después, ¿qué variables
-   locales se guardan en el enum?**
-   Solo `msg` (usada a través de la pausa). `a` y `b` terminan antes de la pausa: pila normal, nunca se guardan.
+3. **¿Qué variables locales se guardan aquí en el enum, y cuáles no?**
 
    ```rust
-    async fn example() {
-      let a = 1;
-      let b = a + 1;
-      println!("{b}");          // se usan `a` y `b`, y ya nunca más
-      let msg = "LED ON";
-      send(msg).await;          // punto de pausa
-      println!("sent {msg}");   // `msg` se usa después de la pausa
-    }
+   async fn example() {
+       let a = 1;
+       let b = a + 1;
+       println!("{b}");          // se usan `a` y `b`, y ya nunca más
+       let msg = "LED ON";
+       send(msg).await;          // punto de pausa
+       println!("sent {msg}");   // `msg` se usa después de la pausa
+   }
    ```
+
+   Solo `msg`, porque se usa *a través* de la pausa y por tanto tiene que sobrevivirla. Con `a` y `b`
+   se termina antes de llegar siquiera a la pausa, así que viven y mueren en la pila normal y nunca
+   entran en el enum.
 
 4. **1000 peticiones simultáneas, cada una esperando una respuesta serie de 5 ms, 8 hilos de trabajo.
    ¿Cuántas tareas pueden estar «esperando el puerto serie» a la vez, y qué consume cada una?**

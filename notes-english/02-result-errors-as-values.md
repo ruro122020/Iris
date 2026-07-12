@@ -5,6 +5,23 @@ Format: the concept, the mental model, the check questions, and the answers wort
 
 **Introduced while writing:** `src/main.rs` `main` signature `Result<(), std::io::Error>`
 
+### The code that introduced it
+
+Iris starts a web server, and starting a server can fail: the port might already be in use. So `main`
+is declared to return a `Result`, and its last line is `Ok(())`:
+
+```rust
+#[tokio::main]
+async fn main() -> Result<(), std::io::Error> {
+    // ... build the router, bind a port, serve ...
+
+    Ok(())
+}
+```
+
+Two things in that signature deserve an explanation: why a function announces its failures in its
+return type at all, and what `Ok(())` is doing on the last line.
+
 ### The concept
 
 > **🔑 Core Concept: `Result`, errors as ordinary values**

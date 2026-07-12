@@ -5,6 +5,23 @@ Formato: el concepto, el modelo mental, las preguntas de comprobación y las res
 
 **Introducido mientras escribíamos:** la firma de `main` en `src/main.rs`, `Result<(), std::io::Error>`
 
+### El código que lo introdujo
+
+Iris arranca un servidor web, y arrancar un servidor puede fallar: puede que el puerto ya esté
+ocupado. Por eso `main` se declara devolviendo un `Result`, y su última línea es `Ok(())`:
+
+```rust
+#[tokio::main]
+async fn main() -> Result<(), std::io::Error> {
+    // ... construir el router, enlazar un puerto, servir ...
+
+    Ok(())
+}
+```
+
+Dos cosas de esa firma merecen explicación: por qué una función anuncia sus fallos en su tipo de
+retorno, y qué hace ese `Ok(())` en la última línea.
+
 ### El concepto
 
 > **🔑 Concepto Fundamental: `Result`, los errores como valores ordinarios**
