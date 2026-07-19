@@ -1,7 +1,7 @@
 ---
 title: Method Chaining by Ownership (the Builder Pattern)
 date: 07-10-2026
-description: Why `.route(...).route(...)` chains work: methods taking `self` by value consume the receiver and hand it back, plus the three receiver forms and what move semantics protect you from.
+description: Why `.route(...).route(...)` chains work. A method taking `self` by value consumes the receiver and hands it back, and the three receiver forms decide what move semantics protect you from.
 draft: false
 ---
 
