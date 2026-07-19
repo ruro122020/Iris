@@ -1,3 +1,9 @@
+---
+title: Generics and Type Inference
+date: 07-14-2026
+description: Why "cannot infer type parameter" happens when a generic is built but never used, how to resolve it, and how to read what a generic function actually demands.
+draft: false
+---
 # Generics and Type Inference
 
 🔑 Core Concept

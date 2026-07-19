@@ -7,6 +7,9 @@ async fn main() -> Result<(), std::io::Error> {
       .route("/on", post(turn_on))
       .route("/off", post(turn_off));
 
+  let listener = tokio::net::TcpListener::bind("127.0.0.1:3000").await?;
+  println!("iris listening on http://127.0.0.1:3000");
+  axum::serve(listener, app).await?;
   Ok(())
 }
 async fn health() -> &'static str {
