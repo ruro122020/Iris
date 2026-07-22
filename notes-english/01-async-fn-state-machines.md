@@ -1,6 +1,6 @@
 ---
 title: Async Functions as State Machines
-date: 07-05-2026
+date: 2026-07-08
 description: Why calling an `async fn` in Rust runs no code, and how the compiler turns the function body into a resumable state machine whose await points become enum states.
 draft: false
 ---

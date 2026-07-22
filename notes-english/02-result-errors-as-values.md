@@ -1,6 +1,6 @@
 ---
 title: Result, Errors Are Ordinary Values
-date: 07-07-2026
+date: 2026-07-09
 description: Why Rust has no exceptions. `Result<T, E>` makes failure an ordinary value the caller must handle, and four tools (`match`, `?`, `unwrap`, `expect`) answer it.
 draft: false
 ---

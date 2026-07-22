@@ -1,6 +1,6 @@
 ---
 title: I/O, Syscalls, and What Async Is Actually For
-date: 07-19-2026
+date: 2026-07-19
 description: What a syscall is and why the kernel sits between your program and the hardware. Also why I/O does not mean slow, and why the real waiting happens inside the accept loop rather than in code you write.
 draft: false
 ---
